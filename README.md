@@ -3,7 +3,7 @@ Calculations for TREES crediting level
 
 ### How to use
 
-!! These scripts are intended to work with confidential data downloaded separately and won't work without it !!
+:exclamation: These scripts are intended to work with confidential data downloaded separately and won't work without it :exclamation:
 
 1. Download and extract the repository: Code > Download ZIP.
 1. Run the R project file (requires Rstudio).
