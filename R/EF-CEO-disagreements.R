@@ -1,14 +1,9 @@
 
-library(tidyverse)
-library(sf)
+## This script is copy/paste from 'AD-CEO-disagreements'
 
-
-file_path <- list.files("data", pattern = "ceo-Part", full.names = T) |>
+file_path <- list.files("data", pattern = "ceo-NFI", full.names = T) |>
   str_subset(pattern = "afterCorrection", negate = T)
 file_path
-
-file_path |> str_extract(pattern = "/[.*]-ART") 
-
 
 ceo_plot <- map_dfr(file_path, function(x){
   tt <- read_csv(x) |> mutate(filename = str_extract(x, pattern = "/.*-ART"))
@@ -45,7 +40,7 @@ dup_tab <- dup |>
   mutate(filename = filename |> str_remove(pattern = "/") |> str_remove("-ART"))
 dup_tab
 
-write_csv(dup_tab, "results/disagreements-plotid.csv")
+write_csv(dup_tab, "results/NFI-disagreements-plotid.csv")
 
 dup_plotid <- dup |>
   filter(count > 2) |>
@@ -79,7 +74,7 @@ disagreement <- map_dfr(dup_plotid, function(x){
   plot_data <- ceo_plot_unique |> filter(plotid == x)
   filename  <- unique(plot_data$filename) |>
     str_remove_all(pattern = "/ceo-|-ART") 
-    
+  
   col_disagreement <- map_dfr(colnames, function(y){
     
     n_values <- plot_data |> pull(y) |> unique() |> length()
@@ -102,5 +97,4 @@ disagreement <- map_dfr(dup_plotid, function(x){
 
 disagreement
 
-write_csv(disagreement, "results/disagreements_column-list.csv")
-
+write_csv(disagreement, "results/NFI-disagreements_column-list.csv")
