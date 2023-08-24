@@ -16,5 +16,12 @@ Calculations helpers for TREES crediting level
 - `R/AD-CEO-disagreements.R` 
   - Finds plot IDs for samples where 3 interpreters found different values for at least one variable.
   - For disagreement plots, detects all column names were the disagreements occur.
+  - USER NEEDS TO ENTER THE DATE OF FILE DOWNLOAD IN `user_input` 
+  
+- `R/AD-CEO-SIG-v4-updated-script.R`
+  - input the results of the disagreements script.
+  - Harmonize the data and output final dataset.
+  - Output confusion matrices.
+  - Output `changeQA` issues.
 
 
