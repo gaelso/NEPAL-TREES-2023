@@ -22,6 +22,8 @@ user_input <- tibble(
   date_dl = "2023-08-18" ## Data of file download
 )
 
+dir.create("results", showWarnings = F)
+
 ## LOAD DATA
 file_path <- list.files(path = "data", pattern = "ceo-Part", full.names = T) |> 
   str_subset(pattern = user_input$date_dl)

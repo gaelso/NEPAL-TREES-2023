@@ -2,10 +2,14 @@
 
 library(tidyverse)
 library(sf) ## If you want spatial vector data analysis
+library(kableExtra)
 
 user_input <- tibble(
   date_dl = "2023-08-18" ## Data of file download
 )
+
+dir.create("results", showWarnings = F)
+
 
 ## GS comments: 
 ## This script is based on ART-TREES-Activity_script_v4.R
@@ -113,7 +117,7 @@ ceo_plot_init <- read_csv(path_data)
 ## GS Comment 2:
 ## The below code can all be grouped in one giant mutate() call is now split between
 ## several mutate() calls to keep the original structure of SIG v4 script.
-names(ceo_plot)
+names(ceo_plot_init)
 
 ceo_plot <- ceo_plot_init |>
   mutate(plotid_unique = paste0(plotid, "a")) |>
@@ -602,7 +606,7 @@ FINALDATASET <- ceo_plot |>
       TRUE ~ 'NotReviewed'
     ),
     # CCDC-SMA
-    t1_CScompare <- case_when(
+    t1_CScompare = case_when(
       t1_disturbance_type == CS_strata_readable &
         !is.na(t1_disturbance_type) ~ 'Agree',
       t1_disturbance_type != CS_strata_readable &
@@ -610,7 +614,7 @@ FINALDATASET <- ceo_plot |>
       TRUE ~ 'NotReviewed'
     ),
     #GEEcombo
-    t1_GEEcombocompare <- case_when(
+    t1_GEEcombocompare = case_when(
       t1_disturbance_type == GEEcombo_strata_readable2 &
         !is.na(t1_disturbance_type) ~ 'Agree',
       t1_disturbance_type != GEEcombo_strata_readable2 &
@@ -670,7 +674,7 @@ FINALDATASET <- ceo_plot |>
       TRUE ~ 'NotReviewed'
     ),
     # Machine Learning
-    t3_MLcompare  = case_when(
+    t3_MLcompare = case_when(
       t3_disturbance_type == ML_strata_readable &
         !is.na(t3_disturbance_type) ~ 'Agree',
       t3_disturbance_type != ML_strata_readable &
@@ -702,26 +706,59 @@ FINALDATASET <- ceo_plot |>
       TRUE ~ 'NotReviewed'
     ),
     
-  )
+  ) |>
   
+  ## GS comment: easier to show REDD+ activities as codes
+  mutate(
+    t1_disturbance_type_code = case_when(
+      t1_disturbance_type == "forest degradation" ~ "DG",
+      t1_disturbance_type == "forest loss"        ~ "DF",
+      t1_disturbance_type == "forest gain"        ~ "FG",
+      t1_disturbance_type == "stable forest"      ~ "SF",
+      t1_disturbance_type == "stable non forest"  ~ "SNF",
+      TRUE ~ NA_character_
+    ),
+    t2_disturbance_type_code = case_when(
+      t2_disturbance_type == "forest degradation" ~ "DG",
+      t2_disturbance_type == "forest loss"        ~ "DF",
+      t2_disturbance_type == "forest gain"        ~ "FG",
+      t2_disturbance_type == "stable forest"      ~ "SF",
+      t2_disturbance_type == "stable non forest"  ~ "SNF",
+      TRUE ~ NA_character_
+    ),
+    GEEcombo_strata_readable2_code = case_when(
+      GEEcombo_strata_readable2 == "forest degradation" ~ "DG",
+      GEEcombo_strata_readable2 == "forest loss"        ~ "DF",
+      GEEcombo_strata_readable2 == "forest gain"        ~ "FG",
+      GEEcombo_strata_readable2 == "stable forest"      ~ "SF",
+      GEEcombo_strata_readable2 == "stable non forest"  ~ "SNF",
+      TRUE ~ NA_character_
+    )
+  )
 
-t1_SMEagreement_LandTrendr <- table(FINALDATASET$t1_LTcompare) 
-t1_SMEagreement_MachineLearning <- table(FINALDATASET$t1_MLcompare)
-t1_SMEagreement_CODED <- table(FINALDATASET$t1_CODEDcompare)
-t1_SMEagreement_CCDCSMA <- table(FINALDATASET$t1_CScompare)
-t1_agreement_GEEcombo <- table(FINALDATASET$t1_GEEcombocompare)
+names(FINALDATASET)
 
-t2_SMEagreement_LandTrendr <- table(FINALDATASET$t2_LTcompare)
-t2_SMEagreement_MachineLearning <- table(FINALDATASET$t2_MLcompare)
-t2_SMEagreement_CODED <- table(FINALDATASET$t2_CODEDcompare)
-t2_SMEagreement_CCDCSMA <- table(FINALDATASET$t2_CScompare)
-t2_agreement_GEEcombo <- table(FINALDATASET$t2_GEEcombocompare)
+write_csv(FINALDATASET, paste0("results/CompiledData_CEO_GEE-ART-TREES-", user_input$date_dl, ".csv"))
 
-t3_SMEagreement_LandTrendr <- table(FINALDATASET$t3_LTcompare)
-t3_SMEagreement_MachineLearning <- table(FINALDATASET$t3_MLcompare)
-t3_SMEagreement_CODED <- table(FINALDATASET$t3_CODEDcompare)
-t3_SMEagreement_CCDCSMA <- table(FINALDATASET$t3_CScompare)
-t3_agreement_GEEcombo <- table(FINALDATASET$t3_GEEcombocompare)
+
+## GS comment: Following tables are not really informative, suggest to move to the confusion matrices
+# t1_SMEagreement_LandTrendr <- table(FINALDATASET$t1_LTcompare) 
+# t1_SMEagreement_MachineLearning <- table(FINALDATASET$t1_MLcompare)
+# t1_SMEagreement_CODED <- table(FINALDATASET$t1_CODEDcompare)
+# t1_SMEagreement_CCDCSMA <- table(FINALDATASET$t1_CScompare)
+# t1_agreement_GEEcombo <- table(FINALDATASET$t1_GEEcombocompare)
+# 
+# t2_SMEagreement_LandTrendr <- table(FINALDATASET$t2_LTcompare)
+# t2_SMEagreement_MachineLearning <- table(FINALDATASET$t2_MLcompare)
+# t2_SMEagreement_CODED <- table(FINALDATASET$t2_CODEDcompare)
+# t2_SMEagreement_CCDCSMA <- table(FINALDATASET$t2_CScompare)
+# t2_agreement_GEEcombo <- table(FINALDATASET$t2_GEEcombocompare)
+# 
+# t3_SMEagreement_LandTrendr <- table(FINALDATASET$t3_LTcompare)
+# t3_SMEagreement_MachineLearning <- table(FINALDATASET$t3_MLcompare)
+# t3_SMEagreement_CODED <- table(FINALDATASET$t3_CODEDcompare)
+# t3_SMEagreement_CCDCSMA <- table(FINALDATASET$t3_CScompare)
+# t3_agreement_GEEcombo <- table(FINALDATASET$t3_GEEcombocompare)
 
 # ----------------------------------------------------------------------------
 
@@ -730,63 +767,169 @@ t3_agreement_GEEcombo <- table(FINALDATASET$t3_GEEcombocompare)
 #################################
 
 # Agreement (confusion) matrix ###############################################
+## Function to create a confusion matrix with accuracy measures
+## Inputs: 
+##    .df a dataframe, 
+##    .col_ref the column name of the reference class, i.e. the visual interpretation, 
+##    .col_map the column name of the map class
+##    .dest    NULL or a folder where to save the confusion matrices
+
+## FOR TESTING ONLY
+# .df = FINALDATASET
+# .col_ref = quo(t1_disturbance_type_code)
+# .col_map = quo(GEEcombo_strata_readable2_code)
+
+make_confmat <- function(.df, .col_ref, .col_map, .dest){
+  
+  .col_map <- enquo(.col_map)
+  .col_ref <- enquo(.col_ref)
+  
+  mat <- table(.df[[ quo_name(.col_map) ]], .df[[ quo_name(.col_ref) ]])
+  
+  ## Check
+  message("Square matrix: ",  nrow(mat) == ncol(mat))
+  
+  #pur_mat  <- as.matrix(mat)
+  diag_val <- diag(mat)
+  tot_ref  <- as.numeric(colSums(mat, na.rm = T))
+  tot_map  <- as.numeric(rowSums(mat, na.rm = T))
+  com_err  <- round((tot_map - diag_val) / tot_map * 100, 0)
+  omi_err  <- round((tot_ref - diag_val) / tot_ref * 100, 0)
+  usr_acc  <- round(diag_val / tot_map * 100, 0)
+  prd_acc  <- round(diag_val / tot_ref * 100, 0)
+  OA       <- round(sum(diag_val) / sum(tot_ref) * 100, 0)
+  
+  ## Create printable table
+  mat2 <- mat |>
+    rbind(tot_ref, omi_err) |>
+    cbind(tot_map = c(tot_map, 0, 0), com_err = c(com_err, 0, 0)) |>
+    as_tibble() |>
+    mutate(
+      map_dat = "Map data",
+      map_cat = c("Forest loss", "Forest degradation", "Forest gain", "Stable Forest", "Stable non-forest", "Total Reference", "Omission error (%)")
+      ) |>
+    select(map_dat, map_cat, everything())
+  
+  kab <- mat2 |>
+    mutate(
+      tot_map = cell_spec(tot_map, color = ifelse(tot_map == 0, "white", "black")),
+      com_err = cell_spec(com_err, color = ifelse(com_err == 0, "white", "black")),
+      map_cat = cell_spec(map_cat, bold = T),
+      map_dat = cell_spec(map_dat, bold = T, angle = -90)
+    ) |>
+    kable(
+      col.names = c("", "", "Forest loss", "Forest degradation", "Forest gain", "Stable Forest", "Stable non-forest", "Total map", "Commission error (%)"), 
+      caption = paste0("Confusion matrix for map: '", quo_name(.col_map), "', and reference: '", quo_name(.col_ref), "'."),
+      align = "llrrrrrrr",
+      escape = F
+      ) |>
+    kable_styling(full_width = F) |>
+    add_header_above(c(" " = 2, "Reference data" = 5, " " = 2)) |>
+    collapse_rows(columns = 1, valign = "middle", row_group_label_position = "") |>
+    footnote(general = paste0("<b>Overall accuracy = ", OA, "%.</b>"), general_title = " ", escape = F)
+  
+  if (!is.null(.dest)) {
+    
+    write_csv(
+      mat2, 
+      paste0(.dest, "/confusion-matrix-", quo_name(.col_map), "-", quo_name(.col_ref), "-", user_input$date_dl, ".csv")
+    )
+    
+    save_kable(
+      kab, 
+      paste0(.dest, "/confusion-matrix-", quo_name(.col_map), "-", quo_name(.col_ref), "-", user_input$date_dl, ".png")
+    )
+    
+  }
+
+  list(mat2 = mat2, OA = OA, kab)
+
+  }
+
+confmat_t1 <- make_confmat(
+  .df = FINALDATASET, 
+  .col_ref = t1_disturbance_type_code, 
+  .col_map = GEEcombo_strata_readable2_code, 
+  .dest = "results"
+  )
+
+confmat_t2 <- make_confmat(
+  .df = FINALDATASET, 
+  .col_ref = t2_disturbance_type_code, 
+  .col_map = GEEcombo_strata_readable2_code, 
+  .dest = "results"
+)
+
+# confmat_t3 <- make_confmat(
+#   .df = FINALDATASET, 
+#   .col_ref = t3_disturbance_type_code, 
+#   .col_map = GEEcombo_strata_readable2_code, 
+#   .dest = "results"
+# )
+
+## GS Comment:
+## Following code replaced with make_confmat() function + FINALDATASET already saved
+## Regarding issues, disagreements already saved as CSV as well as ChangeQA
+
+
+
 
 # Time 1 ---------------------------------------------------------------------
+# 
+# #cross tabulation of strata by disturbance type
+# t1_table_GEEstrata_CEOdisttype <- table(FINALDATASET$GEEcombo_strata_readable2, FINALDATASET$t1_disturbance_type)
+# write.csv(t1_table_GEEstrata_CEOdisttype, file = paste0(results_filepath, '.t1_confusionmatrix_GEEstrata_CEOdisttype-ART-TREES-', part, '.csv'), row.names = T)
+# 
+# # Time 2 ---------------------------------------------------------------------
+# 
+# #cross tabulation of strata by disturbance type
+# t2_table_GEEstrata_CEOdisttype <- table(FINALDATASET$GEEcombo_strata_readable2, FINALDATASET$t2_disturbance_type)
+# write.csv(t2_table_GEEstrata_CEOdisttype, file = paste0(results_filepath, 't2_confusionmatrix_GEEstrata_CEOdisttype-ART-TREES-', part, '.csv'), row.names = T)
+# 
+# # Time 3 ---------------------------------------------------------------------
+# 
+# #cross tabulation of strata by disturbance type
+# t3_table_GEEstrata_CEOdisttype <- table(FINALDATASET$GEEcombo_strata_readable2, FINALDATASET$t3_disturbance_type)
+# write.csv(t3_table_GEEstrata_CEOdisttype, file = paste0(results_filepath, 't3_confusionmatrix_GEEstrata_CEOdisttype-ART-TREES-', part, '.csv'), row.names = T)
+# 
+# # ----------------------------------------------------------------------------
 
-#cross tabulation of strata by disturbance type
-t1_table_GEEstrata_CEOdisttype <- table(FINALDATASET$GEEcombo_strata_readable2, FINALDATASET$t1_disturbance_type)
-write.csv(t1_table_GEEstrata_CEOdisttype, file = paste0(results_filepath, '.t1_confusionmatrix_GEEstrata_CEOdisttype-ART-TREES-', part, '.csv'), row.names = T)
-
-# Time 2 ---------------------------------------------------------------------
-
-#cross tabulation of strata by disturbance type
-t2_table_GEEstrata_CEOdisttype <- table(FINALDATASET$GEEcombo_strata_readable2, FINALDATASET$t2_disturbance_type)
-write.csv(t2_table_GEEstrata_CEOdisttype, file = paste0(results_filepath, 't2_confusionmatrix_GEEstrata_CEOdisttype-ART-TREES-', part, '.csv'), row.names = T)
-
-# Time 3 ---------------------------------------------------------------------
-
-#cross tabulation of strata by disturbance type
-t3_table_GEEstrata_CEOdisttype <- table(FINALDATASET$GEEcombo_strata_readable2, FINALDATASET$t3_disturbance_type)
-write.csv(t3_table_GEEstrata_CEOdisttype, file = paste0(results_filepath, 't3_confusionmatrix_GEEstrata_CEOdisttype-ART-TREES-', part, '.csv'), row.names = T)
-
-# ----------------------------------------------------------------------------
-
-# export final dataset #######################################################
-
-# final data set
-write.csv(FINALDATASET,
-          file = paste0(results_filepath, 'CompiledData_CEO_GEE-ART-TREES-', part, '.csv'),
-          row.names = F)
-
-# export data problems #######################################################
-
-# combine data issues into a single string
-dataproblems_string = paste("\nCEO QAQC data - plot differences between assessors:",
-                            as.character(paste(unique(dataCEO$plotid_unique[!is.na(dataCEO$plot_differences_between_assessors__CEOqual)]), collapse = ", ")),
-                            "\nCEO QAQC - sample differences within plot:",
-                            as.character(paste(unique(dataCEO$plotid_unique[!is.na(dataCEO$sample_differences_within_plot__CEOqual)]), collapse = ", ")),
-                            "\nIn time period 1, these plots did not have changes that agreed with the previous answer:",
-                            paste(notcorrectchanges_t1, collapse=', '),
-                            "\nChange type:",
-                            as.character(paste(dataCEO$t1_change[dataCEO$t1_changeQA == FALSE], collapse='\n')),
-                            "\nLand cover type in t0:",
-                            as.character(paste(dataCEO$t0_type[dataCEO$t1_changeQA == FALSE], collapse='\n')),
-                            "\nLand cover type in t1:",
-                            as.character(paste(dataCEO$t1_type[dataCEO$t1_changeQA == FALSE], collapse='\n')),
-                            "\nIn time period 2, these plots did not have changes that agreed with the previous answer:",
-                            paste(notcorrectchanges_t2, collapse=', '),
-                            "\nChange type:",
-                            as.character(paste(dataCEO$t2_change[dataCEO$t2_changeQA == FALSE], collapse='\n')),
-                            "\nLand cover type in t1:",
-                            as.character(paste(dataCEO$t1_type[dataCEO$t2_changeQA == FALSE], collapse='\n')),
-                            "\nLand cover type in t2:",
-                            as.character(paste(dataCEO$t2_type[dataCEO$t2_changeQA == FALSE], collapse='\n')),
-                            sep = "\n\n") 
-
-# print(dataproblems_string)
-
-# print list of data issues to a word document
-writeLines(dataproblems_string, paste0(results_filepath, 'CEO_data_problems_ART-TREES-', part, '.doc'))
+# # export final dataset #######################################################
+# 
+# # final data set
+# write.csv(FINALDATASET,
+#           file = paste0(results_filepath, 'CompiledData_CEO_GEE-ART-TREES-', part, '.csv'),
+#           row.names = F)
+# 
+# # export data problems #######################################################
+# 
+# # combine data issues into a single string
+# dataproblems_string = paste("\nCEO QAQC data - plot differences between assessors:",
+#                             as.character(paste(unique(dataCEO$plotid_unique[!is.na(dataCEO$plot_differences_between_assessors__CEOqual)]), collapse = ", ")),
+#                             "\nCEO QAQC - sample differences within plot:",
+#                             as.character(paste(unique(dataCEO$plotid_unique[!is.na(dataCEO$sample_differences_within_plot__CEOqual)]), collapse = ", ")),
+#                             "\nIn time period 1, these plots did not have changes that agreed with the previous answer:",
+#                             paste(notcorrectchanges_t1, collapse=', '),
+#                             "\nChange type:",
+#                             as.character(paste(dataCEO$t1_change[dataCEO$t1_changeQA == FALSE], collapse='\n')),
+#                             "\nLand cover type in t0:",
+#                             as.character(paste(dataCEO$t0_type[dataCEO$t1_changeQA == FALSE], collapse='\n')),
+#                             "\nLand cover type in t1:",
+#                             as.character(paste(dataCEO$t1_type[dataCEO$t1_changeQA == FALSE], collapse='\n')),
+#                             "\nIn time period 2, these plots did not have changes that agreed with the previous answer:",
+#                             paste(notcorrectchanges_t2, collapse=', '),
+#                             "\nChange type:",
+#                             as.character(paste(dataCEO$t2_change[dataCEO$t2_changeQA == FALSE], collapse='\n')),
+#                             "\nLand cover type in t1:",
+#                             as.character(paste(dataCEO$t1_type[dataCEO$t2_changeQA == FALSE], collapse='\n')),
+#                             "\nLand cover type in t2:",
+#                             as.character(paste(dataCEO$t2_type[dataCEO$t2_changeQA == FALSE], collapse='\n')),
+#                             sep = "\n\n") 
+# 
+# # print(dataproblems_string)
+# 
+# # print list of data issues to a word document
+# writeLines(dataproblems_string, paste0(results_filepath, 'CEO_data_problems_ART-TREES-', part, '.doc'))
 
 #################################
 # CONFUSION MATRIX STUFF I HAVE NOT MODIFIED YET
@@ -1040,22 +1183,22 @@ writeLines(dataproblems_string, paste0(results_filepath, 'CEO_data_problems_ART-
 
 
 
-outlst <- dataproblems_string
-# agreement_simple, agreement, # 1, 2
-#                SMEagreement_LandTrendr, LT_Compare_Table, # 3.1
-#                SMEagreement_MachineLearning, ML_Compare_Table, # 3.2
-#                SMEagreement_CODED, CODED_Compare_Table,
-#                SMEagreement_CCDCSMA, CCDCSMA_Compare_Table,
-#                agreement_GEEcombo, GEEcombo_Compare_Table,  # 3.5
-#                FINALDATASET)  # 4
-return(outlst)
-# outlst
-
-}
-
-analyze(dataCEO, 
-        dataGEE,
-        dataCEO_qual, 
-        dataGEE_qual,
-        strataAreasGEE)
+# outlst <- dataproblems_string
+# # agreement_simple, agreement, # 1, 2
+# #                SMEagreement_LandTrendr, LT_Compare_Table, # 3.1
+# #                SMEagreement_MachineLearning, ML_Compare_Table, # 3.2
+# #                SMEagreement_CODED, CODED_Compare_Table,
+# #                SMEagreement_CCDCSMA, CCDCSMA_Compare_Table,
+# #                agreement_GEEcombo, GEEcombo_Compare_Table,  # 3.5
+# #                FINALDATASET)  # 4
+# return(outlst)
+# # outlst
+# 
+# }
+# 
+# analyze(dataCEO, 
+#         dataGEE,
+#         dataCEO_qual, 
+#         dataGEE_qual,
+#         strataAreasGEE)
 
