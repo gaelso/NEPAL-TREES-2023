@@ -5,7 +5,7 @@ library(sf) ## If you want spatial vector data analysis
 library(kableExtra)
 
 user_input <- tibble(
-  date_dl = "2023-08-18" ## Data of file download
+  date_dl = "2023-08-24" ## Data of file download
 )
 
 dir.create("results", showWarnings = F)
@@ -871,7 +871,13 @@ confmat_t2 <- make_confmat(
 ## Following code replaced with make_confmat() function + FINALDATASET already saved
 ## Regarding issues, disagreements already saved as CSV as well as ChangeQA
 
-
+##
+## END OF SCRIPT
+##
+################################################################################
+################################################################################
+################################################################################
+################################################################################
 
 
 # Time 1 ---------------------------------------------------------------------

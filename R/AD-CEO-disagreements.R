@@ -19,7 +19,7 @@ library(tidyverse)
 library(sf)
 
 user_input <- tibble(
-  date_dl = "2023-08-18" ## Data of file download
+  date_dl = "2023-08-24" ## Data of file download
 )
 
 dir.create("results", showWarnings = F)
@@ -149,10 +149,11 @@ colnames <- ceo_plot |>
 plotid_3distinct <- df_distinct |> filter(n_distinct == 3) |> pull(plotid)
 
 ## Find disagreement's columns when 3 disagreements
-list_disa3 <- find_disagreements(.data = ceo_plot, .plotid = plotid_3distinct, .colnames = colnames)
-list_disa3
-
-write_csv(list_disa3, paste0("results/list_disagreement_columns-", user_input$date_dl, ".csv"))
+if (length(plotid_3distinct) > 0 ) {
+  list_disa3 <- find_disagreements(.data = ceo_plot, .plotid = plotid_3distinct, .colnames = colnames)
+  list_disa3
+  write_csv(list_disa3, paste0("results/list_disagreement_columns-", user_input$date_dl, ".csv"))
+}
 
 
 
@@ -172,54 +173,59 @@ length(unique(ceo_plot_3disa$plotid)) == nrow(ceo_plot_3disa)
 ## STEP 2: Solve 2 distinct records with majority rule -------------------------
 plotid_2distinct <- df_distinct |> filter(n_distinct == 2) |> pull(plotid)
 
-list_disa2 <- find_disagreements(.data = ceo_plot, .plotid = plotid_2distinct, .colnames = colnames)
-list_disa2
+if (length(plotid_2distinct) > 0 ) {
+  list_disa2 <- find_disagreements(.data = ceo_plot, .plotid = plotid_2distinct, .colnames = colnames)
+  list_disa2
+  
+  ## RUN LOOP over all  oplot with 2 distinct records
+  ## - For each plot, find the first disagreement and find which email agree
+  ## - 
+  ceo_plot_majo <- map_dfr(plotid_2distinct, function(x){
+    
+    ## Counter message
+    pos <- length(plotid_2distinct[plotid_2distinct <= x])
+    tot <- length(plotid_2distinct)
+    if (round(pos/100)*100 == pos) message("Applying majority rule... ", pos, "/", tot)
+    if (pos == tot) message("...Done ", pos, "/", tot)
+    
+    tt <- ceo_plot |> filter(plotid == x)
+    
+    col_disa <- list_disa2 |> filter(plotid == x) |> slice_head(n = 1) |> pull(disagreement_col)
+    
+    col_disa_count <- tt |>
+      group_by(.data[[col_disa]]) |> ## See ?rlang::args_data_masking for tidy eval functions (.data[[varname_txt]] and {{ varname }})
+      summarise(count = n())
+    col_disa_count
+    
+    col_disa_majo <- col_disa_count |> filter(count == 2) |> pull(.data[[col_disa]])
+    
+    email_majo <- tt |> 
+      filter(.data[[col_disa]] == col_disa_majo)|>
+      pull(email)
+    
+    email_disa <- tt |>
+      filter(.data[[col_disa]] != col_disa_majo)|>
+      pull(email)
+    
+    out_email <- paste0("Agree: ", paste0(email_majo, collapse = " "), " - disagree: " , email_disa)
+    out_notes <- paste0(tt$Notes, collapse = " - ")
+    
+    ## Output majority records only
+    out <- tt |>
+      filter(email %in% email_majo) |>
+      mutate(email = out_email, Notes = out_notes) |>
+      distinct()
+    
+  })
+  
+  ceo_plot_majo
+  
+  ## Check
+  length(unique(ceo_plot_majo$plotid)) == nrow(ceo_plot_majo)
+  
+}
 
-## RUN LOOP over all  oplot with 2 distinct records
-## - For each plot, find the first disagreement and find which email agree
-## - 
-ceo_plot_majo <- map_dfr(plotid_2distinct, function(x){
-  
-  ## Counter message
-  pos <- length(plotid_2distinct[plotid_2distinct <= x])
-  tot <- length(plotid_2distinct)
-  if (round(pos/100)*100 == pos) message("Applying majority rule... ", pos, "/", tot)
-  if (pos == tot) message("...Done ", pos, "/", tot)
-  
-  tt <- ceo_plot |> filter(plotid == x)
-  
-  col_disa <- list_disa2 |> filter(plotid == x) |> slice_head(n = 1) |> pull(disagreement_col)
-  
-  col_disa_count <- tt |>
-    group_by(.data[[col_disa]]) |> ## See ?rlang::args_data_masking for tidy eval functions (.data[[varname_txt]] and {{ varname }})
-    summarise(count = n())
-  col_disa_count
-  
-  col_disa_majo <- col_disa_count |> filter(count == 2) |> pull(.data[[col_disa]])
-  
-  email_majo <- tt |> 
-    filter(.data[[col_disa]] == col_disa_majo)|>
-    pull(email)
-  
-  email_disa <- tt |>
-    filter(.data[[col_disa]] != col_disa_majo)|>
-    pull(email)
-  
-  out_email <- paste0("Agree: ", paste0(email_majo, collapse = " "), " - disagree: " , email_disa)
-  out_notes <- paste0(tt$Notes, collapse = " - ")
-  
-  ## Output majority records only
-  out <- tt |>
-    filter(email %in% email_majo) |>
-    mutate(email = out_email, Notes = out_notes) |>
-    distinct()
-  
-})
 
-ceo_plot_majo
-
-## Check
-length(unique(ceo_plot_majo$plotid)) == nrow(ceo_plot_majo)
 
 
 ## STEP 3: Keep only unique records if no disagreements ------------------------
