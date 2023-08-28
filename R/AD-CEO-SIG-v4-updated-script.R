@@ -188,6 +188,9 @@ ceo_plot <- ceo_plot_init |>
     ## Logical error in the original code "Sec. For. 1991-2011 (...)" already take all matching records to 'secondary forest' leaving no possibility
     ## to have "Sec. For. 1991-2011 (...)" and year establishment <= 1983 assigned to 'permanent forest'
     ## After check no consequence of this error as there probably was no afforestation recorded before 1983
+    ## CW response: Establishment year was restricted to 1991 or later. Anything established before 1991 would be older than 20 years by the time of the analysis and thus should be permanent forest.
+    ## However, I don't think the caveat is yet in this code or a forest having an establishment year just after 1991, which could transition from secondary to permanent forest during the time period of analysis.
+    ## This is important because we are only supposed to allow degradation within permanent forests, not secondary forests.
     t0_type_forest = case_when(
       t0_type_forest == "Permanent Forest 1991-2011(>10% CC with no permanent conversion to NF)" ~ 'permanent forest',
       t0_type_forest == "Non-forest in 2011 (consistently non-forest or lost by end of period)" ~ 'non forest',
@@ -321,11 +324,13 @@ ceo_plot <- ceo_plot_init |>
       t0_type_forest == "permanent forest" & 
         t0_type == 'forest' & 
         t1_type  == 'forest' & 
-        t0_numbertrees >= t1_numbertrees & 
+        t0_numbertrees > t1_numbertrees & 
         t1_numbertrees != 0 ~ "forest degradation",
+      #CW comment: Once a year of degradation is recorded maybe add a requirement here that forest needs to be permananent by the year of the event for this to count, otherwise is 'stable'
+      # e.g. (t0_type_forest == "permanent forest" or deg_year - t0_yr_secondaryforest_establ >= 20
       t0_type == 'forest' & t1_type  == 'forest' ~ "stable forest",
       t0_type == 'non forest' & t1_type  == 'non forest' ~ "stable non forest",
-      t0_type == 'non forest' & t1_type  == 'forest' ~ "forest gain",
+      t0_type == 'non forest' & t1_type  == 'forest' ~ "forest gain", #CW comment: no requirement for >5 years as non-forest yet applied
       t0_type == 'forest' & t1_type  == 'non forest' ~ "forest loss",
       TRUE ~ NA_character_
     ),
@@ -376,11 +381,13 @@ ceo_plot <- ceo_plot_init |>
       t1_type_final == "permanent forest" &
         t1_type == 'forest' & 
         t2_type  == 'forest' & 
-        t1_numbertrees >= t2_numbertrees &
+        t1_numbertrees > t2_numbertrees &
         t2_numbertrees != 0 ~  "forest degradation",
+      #CW comment: Once a year of degradation is recorded maybe add a requirement here that forest needs to be permananent by the year of the event for this to count, otherwise is 'stable'
+      # e.g. (t0_type_forest == "permanent forest" or deg_year - t0_yr_secondaryforest_establ >= 20
       t1_type == 'forest' & t2_type  == 'forest' ~  "stable forest",
       t1_type == 'non forest' & t2_type  == 'non forest' ~ "stable non forest",
-      t1_type == 'non forest' & t2_type  == 'forest'     ~ "forest gain",
+      t1_type == 'non forest' & t2_type  == 'forest'     ~ "forest gain", #CW comment: no requirement for >5 years as non-forest yet applied
       t1_type == 'forest' & t2_type  == 'non forest'     ~ "forest loss",
       TRUE ~ NA_character_
     ),
